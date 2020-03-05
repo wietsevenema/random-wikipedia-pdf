@@ -18,8 +18,8 @@ func (service *Service) PdfHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	w.Write(buf)
+	_, err = w.Write(buf)
+	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
 
 func printPDF(ctx context.Context, buf *[]byte) error {

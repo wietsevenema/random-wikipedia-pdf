@@ -8,7 +8,7 @@ require (
 	github.com/chromedp/cdproto v0.0.0-20200209033844-7e00b02ea7d2
 	github.com/chromedp/chromedp v0.5.3
 	github.com/gorilla/mux v1.7.4
-	github.com/segmentio/ksuid v1.0.2
+	github.com/lithammer/shortuuid/v3 v3.0.4
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	google.golang.org/genproto v0.0.0-20200224152610-e50cd9704f63
 )

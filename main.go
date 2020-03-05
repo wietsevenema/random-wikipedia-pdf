@@ -1,31 +1,29 @@
 package main
 
 import (
-	"cloud.google.com/go/storage"
-	"context"
+	"fmt"
 	"github.com/gorilla/mux"
-	"wikipdf/lib/config"
-	"wikipdf/lib/run"
-	"wikipdf/lib/tasks"
 	"log"
 	"net/http"
 	"os"
+
+	"wikipdf/lib/run"
+	"wikipdf/lib/tasks"
+	"wikipdf/storage"
 )
 
 type Service struct {
-	bucket *storage.BucketHandle
-	tasks  *tasks.Tasks
-	run    *run.Client
+	tasks   *tasks.Tasks
+	run     *run.Client
+	storage *storage.Storage
 }
 
 func main() {
-
 	log.Println("Creating Cloud Storage Client")
-	client, err := storage.NewClient(context.Background())
+	storage, err := storage.NewClient()
 	if err != nil {
-		log.Fatalf("Failed to create Cloud Storage client: %v", err)
+		panic(err)
 	}
-	bucket := client.Bucket(config.ProjectID() + "-pdf")
 
 	// Tasks
 	log.Println("Creating Cloud Tasks Client")
@@ -42,16 +40,20 @@ func main() {
 	}
 
 	service := Service{
-		bucket: bucket,
-		tasks:  tasks,
-		run:    runClient}
+		storage: storage,
+		tasks:   tasks,
+		run:     runClient}
 	service.listenAndServe()
 }
 
 func (service *Service) listenAndServe() {
 	r := mux.NewRouter()
 
-	jobIDFormat := "{jobID:[a-zA-Z0-9]{27}}"
+	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprint(w, "<a href='/pdf'>Random wikipedia PDF</a>")
+	})
+
+	jobIDFormat := "{jobID:[a-zA-Z0-9]{22}}"
 	r.HandleFunc("/jobs", service.InsertHandler).
 		Methods("POST")
 

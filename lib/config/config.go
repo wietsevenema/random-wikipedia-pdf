@@ -19,6 +19,14 @@ func ProjectID() string {
 	return projectID
 }
 
+func JobHandlingService() string {
+	return "wikipdf"
+}
+
+func QueueName() string {
+	return "pdfJob"
+}
+
 func loadProjectID() {
 	var err error
 	if metadata.OnGCE() {

@@ -4,6 +4,7 @@ import (
 	"cloud.google.com/go/storage"
 	"github.com/gorilla/mux"
 	"io"
+	"log"
 	"net/http"
 )
 
@@ -13,21 +14,22 @@ func (service *Service) ResultHandler(
 	vars := mux.Vars(request)
 	jobID := vars["jobID"]
 
-	reader, err := service.bucket.Object(jobID + ".pdf").NewReader(request.Context());
-	if err == nil {
-		_, err := io.Copy(writer, reader)
-		if err != nil {
-			handleError(writer, "Error writing response", err)
-			return
-		}
-		writer.WriteHeader(http.StatusOK)
-		return
-	}
-
+	reader, err := service.storage.ResultReader(
+		request.Context(),
+		jobID,
+	)
 	if err == storage.ErrObjectNotExist {
 		writer.WriteHeader(http.StatusNotFound)
 		return
 	}
+	if err != nil {
+		handleError(writer, "Error reading file", err)
+		return
+	}
 
-	handleError(writer, "Error reading file", err)
+	_, err = io.Copy(writer, reader)
+	if err != nil {
+		log.Printf("ERROR: %s", err)
+		return
+	}
 }

@@ -5,14 +5,14 @@ import (
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
+	"wikipdf/lib/config"
 )
 
 func (service *Service) ExecuteHandler(
 	writer http.ResponseWriter, request *http.Request) {
 
-	//FIXME extract queuename
 	queueName := request.Header.Get("X-Cloudtasks-Queuename")
-	if queueName != "pdfJob" {
+	if queueName != config.QueueName() {
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -20,13 +20,24 @@ func (service *Service) ExecuteHandler(
 	vars := mux.Vars(request)
 	jobID := vars["jobID"]
 
-	sw := service.bucket.
-		Object(jobID + ".pdf").
-		NewWriter(context.Background())
+	inProgress, err := service.storage.InProgress(
+		request.Context(),
+		jobID,
+	)
+	if err != nil {
+		handleError(writer, "Error reading job state", err)
+		return
+	}
+	if !inProgress {
+		http.NotFound(writer, request)
+		return
+	}
+
+	sw := service.storage.ResultWriter(request.Context(), jobID)
 	defer sw.Close()
 
 	var buf []byte
-	err := printPDF(context.Background(), &buf)
+	err = printPDF(context.Background(), &buf)
 	if err != nil {
 		handleError(writer, "Error printing pdf", err)
 		return
@@ -37,8 +48,7 @@ func (service *Service) ExecuteHandler(
 		return
 	}
 
-	err = service.bucket.
-		Object(jobID + ".pending").Delete(context.Background())
+	err = service.storage.RemoveInProgress(jobID)
 	if err != nil {
 		log.Printf("ERROR: %s", err)
 		// Not quitting on this error

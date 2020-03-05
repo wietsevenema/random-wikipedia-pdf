@@ -1,11 +1,9 @@
 package main
 
 import (
-	"cloud.google.com/go/storage"
-	"context"
 	"encoding/json"
 	"github.com/gorilla/mux"
-	"wikipdf/lib/tasks"
+	"log"
 	"net/http"
 )
 
@@ -17,8 +15,8 @@ const (
 )
 
 type StateResult struct {
-	JobID string `json:jobID`
-	State State  `json:state`
+	JobID string `json:"jobID"`
+	State State  `json:"state"`
 }
 
 func (service *Service) StateHandler(
@@ -31,34 +29,36 @@ func (service *Service) StateHandler(
 	}
 	encoder := json.NewEncoder(writer)
 
-	if _, e := service.bucket.Object(jobID + ".pdf").Attrs(request.Context());
-		e != storage.ErrObjectNotExist {
+	result, err := service.storage.Completed(request.Context(), jobID)
+	if err != nil {
+		handleError(writer, "Error reading state", err)
+		return
+	}
+	if result {
 		state.State = StateCompleted
-		encoder.Encode(state)
-		writer.WriteHeader(http.StatusOK)
+		err := encoder.Encode(state)
+		if err != nil {
+			log.Printf("ERROR: %s", err)
+		}
 		return
 	}
 
-	if _, e := service.bucket.Object(jobID + ".pending").Attrs(request.Context());
-		e != storage.ErrObjectNotExist {
+	inProgress, err := service.storage.InProgress(request.Context(), jobID)
+	if err != nil {
+		handleError(writer, "Error reading state", err)
+		return
+	}
+	if inProgress {
 		state.State = StateInProgress
-		encoder.Encode(state)
-		writer.WriteHeader(http.StatusOK)
+
+		err = encoder.Encode(state)
+		if err != nil {
+			log.Printf("ERROR: %s", err)
+		}
 		return
 	}
 
 	writer.WriteHeader(http.StatusNotFound)
 	return
 
-}
-
-//FIXME extract this to separate package (.pdf, .pending, are spreading everywhere)
-func (service *Service) WritePending(jobID string, task *tasks.Task) error {
-	sw := service.bucket.
-		Object(jobID + ".pending").
-		NewWriter(context.Background())
-	defer sw.Close()
-
-	en := json.NewEncoder(sw)
-	return en.Encode(task)
 }

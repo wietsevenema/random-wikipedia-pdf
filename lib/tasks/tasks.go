@@ -24,11 +24,11 @@ func NewClient() (*Tasks, error) {
 }
 
 type Task struct {
-	Queue          string `json:queue`
-	TaskID         string `json:taskID`
-	URL            string `json:url`
+	Queue          string `json:"queue"`
+	TaskID         string `json:"taskID"`
+	URL            string `json:"url"`
 	Body           []byte `json:"-"`
-	ServiceAccount string `json:serviceAccount`
+	ServiceAccount string `json:"serviceAccount"`
 }
 
 func (client *Tasks) AddTask(
