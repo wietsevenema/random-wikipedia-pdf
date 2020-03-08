@@ -4,6 +4,7 @@ import (
 	"cloud.google.com/go/storage"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"wikipdf/lib/config"
 	"wikipdf/lib/tasks"
@@ -44,15 +45,26 @@ func (s *Storage) WriteInProgress(
 	return en.Encode(task)
 }
 
-func (s *Storage) Completed(ctx context.Context, jobID string) (bool, error) {
-	_, err := s.bucket.Object(jobID + pdfSuffix).Attrs(ctx)
-	if err != nil {
-		if err == storage.ErrObjectNotExist {
-			return false, nil
-		}
-		return false, err
+func (s *Storage) Completed(
+	ctx context.Context,
+	jobID string,
+) (bool, error) {
+
+	_, err := s.bucket.
+		Object(jobID + pdfSuffix).
+		Attrs(ctx)
+
+	if err == nil {
+		return true, nil
 	}
-	return true, nil
+	if err == storage.ErrObjectNotExist {
+		return false, nil
+	}
+	log.Printf("ERROR: %s", err)
+	err = fmt.Errorf(
+		"reading storage failed for job %s",
+		jobID)
+	return false, err
 }
 
 func (s *Storage) InProgress(

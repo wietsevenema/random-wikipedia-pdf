@@ -45,7 +45,7 @@ func (client *Tasks) AddTask(
 		HttpMethod: taskspb.HttpMethod_POST,
 		AuthorizationHeader: &taskspb.HttpRequest_OidcToken{
 			// This tells Cloud Tasks to add an Authorization
-			// header with the identity of the calling function
+			// header
 			OidcToken: &taskspb.OidcToken{
 				ServiceAccountEmail: task.ServiceAccount,
 			},

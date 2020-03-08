@@ -19,7 +19,7 @@ type StateResult struct {
 	State State  `json:"state"`
 }
 
-func (service *Service) StateHandler(
+func (service *Service) StatusHandler(
 	writer http.ResponseWriter, request *http.Request) {
 
 	vars := mux.Vars(request)
@@ -29,7 +29,10 @@ func (service *Service) StateHandler(
 	}
 	encoder := json.NewEncoder(writer)
 
-	result, err := service.storage.Completed(request.Context(), jobID)
+	result, err := service.storage.Completed(
+		request.Context(),
+		jobID,
+	)
 	if err != nil {
 		handleError(writer, "Error reading state", err)
 		return

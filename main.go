@@ -57,7 +57,7 @@ func (service *Service) listenAndServe() {
 	r.HandleFunc("/jobs", service.InsertHandler).
 		Methods("POST")
 
-	r.HandleFunc("/jobs/"+jobIDFormat, service.StateHandler).
+	r.HandleFunc("/jobs/"+jobIDFormat, service.StatusHandler).
 		Methods("GET")
 
 	r.HandleFunc("/pdfs/"+jobIDFormat, service.ResultHandler).
@@ -79,6 +79,7 @@ func (service *Service) listenAndServe() {
 	log.Fatal(http.ListenAndServe(":"+port, r))
 }
 
+//FIXME update handlers ("appError" approach)
 func handleError(writer http.ResponseWriter, msg string, err error) {
 	log.Printf("ERROR: %s", err)
 	http.Error(
